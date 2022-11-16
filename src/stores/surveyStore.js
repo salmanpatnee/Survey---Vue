@@ -288,6 +288,10 @@ export const useSurveyStore = defineStore("surveyStore", {
       surveys: {
         isLoading: false,
         data: [],
+      }, 
+      dashboard: {
+        isLoading: false,
+        data: {},
       },
       questionTypes: ["text", "textarea", "select", "radio", "checkbox"],
       currentSurvey: {
@@ -297,6 +301,17 @@ export const useSurveyStore = defineStore("surveyStore", {
     };
   },
   actions: {
+    async getDashboardData(){
+      try {
+        this.dashboard.isLoading = true;
+        const { data } = await http.get(`/api/dashboard`);
+        this.dashboard.data = data;
+        this.dashboard.isLoading = false;
+      } catch (error) {
+        console.log({ error });
+        this.dashboard.isLoading = false;
+      }
+    },
     async addSurvey(survey) {
       let response;
       if (survey.id) {
