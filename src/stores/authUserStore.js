@@ -14,16 +14,6 @@ export const useAuthUserStore = defineStore("authUserStore", {
     };
   },
   actions: {
-    async register(user) {
-      const response = await http.post(`/api/register`, user);
-      this.setUser(response.data);
-      return response;
-    },
-    async login(user) {
-      const response = await http.post(`/api/login`, user);
-      this.setUser(response.data);
-      return response;
-    },
     setUser(data) {
       this.user.data = data.user;
       this.user.token = data.token;

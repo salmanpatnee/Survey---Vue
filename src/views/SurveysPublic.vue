@@ -1,13 +1,11 @@
 <script setup>
-import { v4 as uuidv4 } from "uuid";
-import { useRoute, useRouter } from "vue-router";
 import { useSurveyStore } from "@/stores/surveyStore.js";
+import { useRoute } from "vue-router";
+import { ref, computed } from "vue";
 import QuestionViewer from "@/components/QuestionViewer.vue";
-import { ref, watch, computed, onMounted } from "vue";
 
-const route = useRoute();
-const router = useRouter();
 const surveyStore = useSurveyStore();
+const route = useRoute();
 
 const isLoading = computed(() => surveyStore.currentSurvey.isLoading);
 const survey = computed(() => surveyStore.currentSurvey.data);

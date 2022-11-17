@@ -1,29 +1,25 @@
 <script setup>
 import { useAuthUserStore } from "@/stores/authUserStore.js";
+import Form from "vform";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
 
 const authUserStore = useAuthUserStore();
 const router = useRouter();
-const loading = ref(false);
 
-const data = ref({
-  email: "",
-  password: "",
-});
-
-const errorMsg = ref("");
+const form = ref(
+  new Form({
+    email: "",
+    password: "",
+  })
+);
 
 const handleLogin = async () => {
-  loading.value = true;
   try {
-    await authUserStore.login(data.value).then((response) => {
-      loading.value = false;
-      router.push({ name: "dashboard" });
-    });
+    const { data } = await form.value.post(`/api/login`);
+    authUserStore.setUser(data);
+    router.push({ name: "dashboard" });
   } catch (error) {
-    loading.value = false;
-    errorMsg.value = error.response.data.error;
   }
 };
 </script>
@@ -39,20 +35,7 @@ const handleLogin = async () => {
             <router-link :to="{ name: 'register' }">Register now</router-link>
           </p>
         </div>
-        <div
-          v-if="errorMsg"
-          class="alert alert-danger alert-dismissible fade show"
-          role="alert"
-        >
-          <strong>Error</strong> {{ errorMsg }}
-          <button
-            @click="errorMsg = ''"
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-          ></button>
-        </div>
+
         <form @submit.prevent="handleLogin">
           <div class="mb-3">
             <label for="email" class="form-label">Email address</label>
@@ -60,9 +43,10 @@ const handleLogin = async () => {
               type="email"
               class="form-control"
               id="email"
-              v-model="data.email"
+              v-model="form.email"
               required
             />
+            <HasError :form="form" field="email" />
           </div>
           <div class="mb-3">
             <label for="password" class="form-label">Password</label>
@@ -70,19 +54,14 @@ const handleLogin = async () => {
               type="password"
               class="form-control"
               id="password"
-              v-model="data.password"
+              v-model="form.password"
               required
             />
+            <HasError :form="form" field="password" />
           </div>
-          <button class="btn btn-primary" type="submit" :disabled="loading">
-            <span
-              v-if="loading"
-              class="spinner-border spinner-border-sm"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            {{ loading ? "Loging in..." : "Login" }}
-          </button>
+          <Button :form="form" class="btn btn-primary">
+            Login
+          </Button>
         </form>
       </div>
       <div class="col-3"></div>

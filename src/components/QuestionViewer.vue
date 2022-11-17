@@ -1,6 +1,6 @@
 <script setup>
 import { useSurveyStore } from "@/stores/surveyStore.js";
-import { ref, computed } from "vue";
+import { ref } from "vue";
 
 const { question, index, modelValue } = defineProps({
   question: Object,
@@ -14,6 +14,7 @@ let model;
 if (question.type === "checkbox") {
   model = ref({});
 }
+
 const surveyStore = useSurveyStore();
 
 const handleChecboxChange = () => {

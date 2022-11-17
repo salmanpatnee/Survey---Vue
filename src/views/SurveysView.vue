@@ -1,35 +1,56 @@
 <script setup>
+import { useSurveyStore } from "@/stores/surveyStore.js";
+import Form from "vform";
 import { v4 as uuidv4 } from "uuid";
 import { useRoute, useRouter } from "vue-router";
-import { useSurveyStore } from "@/stores/surveyStore.js";
-import QuestionEditor from "@/components/QuestionEditor.vue";
 import { ref, watch, computed, onMounted } from "vue";
+import QuestionEditor from "@/components/QuestionEditor.vue";
 
 const route = useRoute();
 const router = useRouter();
 const surveyStore = useSurveyStore();
 const editMode = ref(false);
 
-const form = ref({
-  id: "",
-  title: "",
-  status: false,
-  description: null,
-  image: null,
-  expire_date: null,
-  questions: [],
-});
+const form = ref(
+  new Form({
+    id: "",
+    title: "",
+    status: false,
+    description: null,
+    image: null,
+    expire_date: null,
+    questions: [],
+  })
+);
+
+const isLoading = computed(() => surveyStore.currentSurvey.isLoading);
+
+watch(
+  () => surveyStore.currentSurvey.data,
+  (newVal, oldVal) => {
+    form.value.fill(newVal);
+    // form.value.fill = {
+    //   ...JSON.parse(JSON.stringify(newVal)),
+    // };
+  }
+);
 
 const addSurvey = async () => {
   try {
-    const { data } = await surveyStore.addSurvey(form.value);
-    router.push({ name: "surveys.view", params: { id: data.data.id } });
+    if (route.params.id) {
+      const { data } = await form.value.put(`/api/surveys/${route.params.id}`);
+      router.push({ name: "surveys.view", params: { id: data.data.id } });
+    } else {
+      const { data } = await form.value.post(`/api/surveys`);
+      router.push({ name: "surveys.view", params: { id: data.data.id } });
+    }
   } catch (error) {
     console.log("Error", error);
   }
 };
 
-const addQuestion = (index) => {
+//OK
+const handleAddQuestion = (index) => {
   const newQuestion = {
     id: uuidv4(),
     type: "text",
@@ -37,20 +58,26 @@ const addQuestion = (index) => {
     description: null,
     data: {},
   };
-  
+
+  // Add an element at specify index
   form.value.questions.splice(index, 0, newQuestion);
+
+  // Add an element at the end.
+  // form.value.questions.push(newQuestion);
 };
 
-const deleteQuestion = (question) => {
+//OK
+const handleDeleteQuestion = (question) => {
   form.value.questions = form.value.questions.filter(
     (q) => q.id !== question.id
   );
 };
 
-const questionChange = (question) => {
+const handleQuestionChange = (question) => {
   form.value.questions = form.value.questions.map((q) => {
     if (q.id === question.id) {
-      return JSON.parse(JSON.stringify(question));
+      // return JSON.parse(JSON.stringify(question));
+      return question;
     }
     return q;
   });
@@ -68,17 +95,6 @@ const uploadFile = (e) => {
     //Error
   }
 };
-
-watch(
-  () => surveyStore.currentSurvey.data,
-  (newVal, oldVal) => {
-    form.value = {
-      ...JSON.parse(JSON.stringify(newVal)),
-    };
-  }
-);
-
-const isLoading = computed(() => surveyStore.currentSurvey.isLoading);
 
 const deleteSurvey = () => {
   if (confirm("Are you sure")) {
@@ -100,12 +116,10 @@ if (route.params.id) {
   //   (survey) => survey.id === parseInt(route.params.id)
   // );
 }
-
 </script>
 
 <template>
   <AppPanel>
- 
     <template #header>
       <h2>{{ editMode ? form.title : "Add New Survey" }}</h2>
 
@@ -148,6 +162,7 @@ if (route.params.id) {
           id="title"
           v-model="form.title"
         />
+        <HasError :form="form" field="title" />
       </div>
       <div class="mb-3">
         <label for="description" class="form-label">Description</label>
@@ -165,6 +180,7 @@ if (route.params.id) {
           id="expire_date"
           v-model="form.expire_date"
         />
+        <HasError :form="form" field="expire_date" />
       </div>
       <div class="form-check mb-3">
         <input
@@ -185,7 +201,7 @@ if (route.params.id) {
         <h3>Questions</h3>
         <button
           type="button"
-          @click="addQuestion()"
+          @click="handleAddQuestion()"
           class="btn btn-outline-secondary"
         >
           Add Question
@@ -199,15 +215,17 @@ if (route.params.id) {
           <QuestionEditor
             :question="question"
             :index="index"
-            @change="questionChange"
-            @addQuestion="addQuestion"
-            @deleteQuestion="deleteQuestion"
+            @addQuestion="handleAddQuestion"
+            @deleteQuestion="handleDeleteQuestion"
+            @change="handleQuestionChange"
           />
         </div>
       </div>
       <!-- /Questions -->
       <div class="text-end">
-        <button class="btn btn-outline-primary">Save</button>
+        <Button :form="form" class="btn btn-lg btn-outline-primary">
+          {{ editMode ? "Update" : "Save" }}
+        </Button>
       </div>
     </form>
   </AppPanel>

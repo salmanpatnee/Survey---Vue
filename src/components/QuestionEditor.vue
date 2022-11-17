@@ -3,24 +3,49 @@ import { v4 as uuidv4 } from "uuid";
 import { useSurveyStore } from "@/stores/surveyStore.js";
 import { ref, computed } from "vue";
 
-const props = defineProps({
+const { question, index } = defineProps({
   question: Object,
   index: Number,
 });
 
-const emit = defineEmits(["change", "addQuestion", "deleteQuestion"]);
+const emit = defineEmits(["addQuestion", "deleteQuestion", "change"]);
 
-const model = ref(JSON.parse(JSON.stringify(props.question)));
-// const model = ref(props.question);
-// const question = ref(props.question);
+// const model = ref(JSON.parse(JSON.stringify(question)));
 
 const surveyStore = useSurveyStore();
+const model = ref(question);
 const questionTypes = computed(() => surveyStore.questionTypes);
 
 const shouldHaveOptions = () => {
   //Checking if the specific values exists in the model
   //php in_array equivalent
   return ["radio", "checkbox", "select"].includes(model.value.type);
+};
+
+const dataChange = () => {
+  // const data = JSON.parse(JSON.stringify(model.value));
+  const data = model.value;
+
+  // If it is not MCQs
+  if (!shouldHaveOptions()) {
+    delete data.data.options;
+  }
+  emit("change", data);
+};
+
+const getOptions = () => {
+  return model.value.data.options;
+};
+
+const setOptions = (options) => {
+  model.value.data.options = options;
+};
+
+const typeChange = () => {
+  if (shouldHaveOptions()) {
+    setOptions(getOptions() || []);
+  }
+  dataChange();
 };
 
 const addOption = () => {
@@ -33,28 +58,7 @@ const removeOption = (option) => {
   dataChange();
 };
 
-const addQuestion = () => emit("addQuestion", props.index + 1);
-const deleteQuestion = () => emit("deleteQuestion", props.question);
 
-const dataChange = () => {
-  const data = JSON.parse(JSON.stringify(model.value));
-  if (!shouldHaveOptions()) {
-    delete data.data.options;
-  }
-  emit("change", data);
-};
-const getOptions = () => {
-  return model.value.data.options;
-};
-const setOptions = (options) => {
-  model.value.data.options = options;
-};
-const typeChange = () => {
-  if (shouldHaveOptions()) {
-    setOptions(getOptions() || []);
-  }
-  dataChange();
-};
 </script>
 <template>
   <div class="mb-4">
@@ -65,14 +69,14 @@ const typeChange = () => {
         <button
           type="button"
           class="btn btn-outline-info btn-sm me-2"
-          @click="addQuestion()"
+          @click="$emit('addQuestion', index + 1)"
         >
           Add
         </button>
         <button
           type="button"
           class="btn btn-outline-danger btn-sm"
-          @click="deleteQuestion()"
+          @click="$emit('deleteQuestion', question)"
         >
           Delete
         </button>
@@ -89,9 +93,9 @@ const typeChange = () => {
           <input
             type="text"
             :name="`question_text_${model.id}`"
+            :id="`question_text_${model.id}`"
             v-model="model.question"
             @change="dataChange"
-            :id="`question_text_${model.id}`"
             class="form-control"
           />
         </div>
@@ -102,8 +106,8 @@ const typeChange = () => {
             >Select Question Type</label
           >
           <select
-            id="question_type"
             name="question_type"
+            id="question_type"
             class="form-select text-capitalize"
             v-model="model.type"
             @change="typeChange"
@@ -176,7 +180,5 @@ const typeChange = () => {
       <!-- End option list -->
     </div>
     <!-- End question data -->
-
-    <div></div>
   </div>
 </template>

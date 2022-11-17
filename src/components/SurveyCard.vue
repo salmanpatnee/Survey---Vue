@@ -1,5 +1,5 @@
 <script setup>
-const props = defineProps({
+const {survey} = defineProps({
   survey: {
     type: Object,
     required: true,
@@ -8,12 +8,12 @@ const props = defineProps({
 
 const emit = defineEmits(["deleteSurvey"]);
 
-const deleteSurvey = () => emit("deleteSurvey", props.survey.id);
 </script>
 
 <template>
   <div class="card">
-    <img :src="survey.image" class="card-img-top" :alt="survey.title" />
+    <img v-if="survey.image" :src="survey.image" class="card-img-top" :alt="survey.title" />
+    <img v-else src="//via.placeholder.com/640x640" class="card-img-top" :alt="survey.title" />
     <div class="card-body">
       <h5 class="card-title">{{ survey.title }}</h5>
       <p class="card-text">{{ survey.description }}</p>
@@ -33,7 +33,7 @@ const deleteSurvey = () => emit("deleteSurvey", props.survey.id);
         >
         <button
           type="button"
-          @click="deleteSurvey"
+          @click="$emit('deleteSurvey', survey.id)"
           class="btn btn-outline-danger btn-sm"
         >
           Delete
